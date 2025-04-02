@@ -2,6 +2,7 @@ from mcp.server.fastmcp import FastMCP, Context
 from typing import Dict, Any, List
 from unity_connection import get_unity_connection
 
+
 def register_manage_gameobject_tools(mcp: FastMCP):
     """Register all GameObject management tools with the MCP server."""
 
@@ -9,32 +10,35 @@ def register_manage_gameobject_tools(mcp: FastMCP):
     def manage_gameobject(
         ctx: Context,
         action: str,
-        target: str = None,  # GameObject identifier by name or path
-        search_method: str = None,
+        target: str | None = None,  # GameObject identifier by name or path
+        search_method: str | None = None,
         # --- Combined Parameters for Create/Modify ---
-        name: str = None,  # Used for both 'create' (new object name) and 'modify' (rename)
-        tag: str = None,  # Used for both 'create' (initial tag) and 'modify' (change tag)
-        parent: str = None,  # Used for both 'create' (initial parent) and 'modify' (change parent)
-        position: List[float] = None,
-        rotation: List[float] = None,
-        scale: List[float] = None,
-        components_to_add: List[str] = None,  # List of component names to add
-        primitive_type: str = None,
-        save_as_prefab: bool = False,
-        prefab_path: str = None,
+        name: str
+        | None = None,  # Used for both 'create' (new object name) and 'modify' (rename)
+        tag: str
+        | None = None,  # Used for both 'create' (initial tag) and 'modify' (change tag)
+        parent: str
+        | None = None,  # Used for both 'create' (initial parent) and 'modify' (change parent)
+        position: List[float] | None = None,
+        rotation: List[float] | None = None,
+        scale: List[float] | None = None,
+        components_to_add: List[str] | None = None,  # List of component names to add
+        primitive_type: str | None = None,
+        save_as_prefab: bool | None = False,
+        prefab_path: str | None = None,
         prefab_folder: str = "Assets/Prefabs",
         # --- Parameters for 'modify' ---
-        set_active: bool = None,
-        layer: str = None,  # Layer name
-        components_to_remove: List[str] = None,
-        component_properties: Dict[str, Dict[str, Any]] = None,
+        set_active: bool | None = None,
+        layer: str | None = None,  # Layer name
+        components_to_remove: List[str] | None = None,
+        component_properties: Dict[str, Dict[str, Any]] | None = None,
         # --- Parameters for 'find' ---
-        search_term: str = None,
+        search_term: str | None = None,
         find_all: bool = False,
         search_in_children: bool = False,
         search_inactive: bool = False,
         # -- Component Management Arguments --
-        component_name: str = None,
+        component_name: str | None = None,
     ) -> Dict[str, Any]:
         """Manages GameObjects: create, modify, delete, find, and component operations.
 
@@ -91,26 +95,34 @@ def register_manage_gameobject_tools(mcp: FastMCP):
                 "findAll": find_all,
                 "searchInChildren": search_in_children,
                 "searchInactive": search_inactive,
-                "componentName": component_name
+                "componentName": component_name,
             }
             params = {k: v for k, v in params.items() if v is not None}
-            
+
             # --- Handle Prefab Path Logic ---
-            if action == "create" and params.get("saveAsPrefab"): # Check if 'saveAsPrefab' is explicitly True in params
+            if action == "create" and params.get(
+                "saveAsPrefab"
+            ):  # Check if 'saveAsPrefab' is explicitly True in params
                 if "prefabPath" not in params:
                     if "name" not in params or not params["name"]:
-                        return {"success": False, "message": "Cannot create default prefab path: 'name' parameter is missing."}
+                        return {
+                            "success": False,
+                            "message": "Cannot create default prefab path: 'name' parameter is missing.",
+                        }
                     # Use the provided prefab_folder (which has a default) and the name to construct the path
                     constructed_path = f"{prefab_folder}/{params['name']}.prefab"
                     # Ensure clean path separators (Unity prefers '/')
                     params["prefabPath"] = constructed_path.replace("\\", "/")
                 elif not params["prefabPath"].lower().endswith(".prefab"):
-                    return {"success": False, "message": f"Invalid prefab_path: '{params['prefabPath']}' must end with .prefab"}
+                    return {
+                        "success": False,
+                        "message": f"Invalid prefab_path: '{params['prefabPath']}' must end with .prefab",
+                    }
             # Ensure prefab_folder itself isn't sent if prefabPath was constructed or provided
             # The C# side only needs the final prefabPath
-            params.pop("prefab_folder", None) 
+            params.pop("prefab_folder", None)
             # --------------------------------
-            
+
             # Send the command to Unity via the established connection
             # Use the get_unity_connection function to retrieve the active connection instance
             # Changed "MANAGE_GAMEOBJECT" to "manage_gameobject" to potentially match Unity expectation
@@ -119,9 +131,24 @@ def register_manage_gameobject_tools(mcp: FastMCP):
             # Check if the response indicates success
             # If the response is not successful, raise an exception with the error message
             if response.get("success"):
-                return {"success": True, "message": response.get("message", "GameObject operation successful."), "data": response.get("data")}
+                return {
+                    "success": True,
+                    "message": response.get(
+                        "message", "GameObject operation successful."
+                    ),
+                    "data": response.get("data"),
+                }
             else:
-                return {"success": False, "message": response.get("error", "An unknown error occurred during GameObject management.")}
+                return {
+                    "success": False,
+                    "message": response.get(
+                        "error",
+                        "An unknown error occurred during GameObject management.",
+                    ),
+                }
 
         except Exception as e:
-            return {"success": False, "message": f"Python error managing GameObject: {str(e)}"} 
+            return {
+                "success": False,
+                "message": f"Python error managing GameObject: {str(e)}",
+            }
