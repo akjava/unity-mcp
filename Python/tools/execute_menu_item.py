@@ -34,7 +34,7 @@ def register_execute_menu_item_tools(mcp: FastMCP):
         # Prepare parameters for the C# handler
         params_dict = {
             "action": action,
-            "menuPath": menu_path,
+            "menu_path": menu_path,
             "parameters": parameters if parameters else {},
         }
 
