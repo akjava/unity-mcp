@@ -1,8 +1,15 @@
 # Unity MCP Package
-
 A Unity package that enables seamless communication between Unity and Large Language Models (LLMs) like Claude Desktop via the **Model Context Protocol (MCP)**. This server acts as a bridge, allowing Unity to send commands to and receive responses from MCP-compliant tools, empowering developers to automate workflows, manipulate assets, and control the Unity Editor programmatically.
 
 Welcome to the initial release of this open-source project! Whether you're looking to integrate LLMs into your Unity workflow or contribute to an exciting new tool, I appreciate you taking the time to check it out!
+
+
+## Folk
+This repository is a fork of [unity-mcp](https://github.com/justinpbarnett/unity-mcp) version 1.0.1. 
+Unity MCP is really fun,thanks for shareing code under MIT License.
+
+This fork includes personal modifications.to attempt compatibility with [smolagents](https://github.com/huggingface/smolagents) Code Agents.My patches may not work with the original repository, especially due to differences in handling None values.
+
 
 ## Overview
 
