@@ -2,6 +2,7 @@ from mcp.server.fastmcp import FastMCP, Context
 from typing import Dict, Any
 from unity_connection import get_unity_connection
 
+
 def register_manage_scene_tools(mcp: FastMCP):
     """Register all scene management tools with the MCP server."""
 
@@ -9,9 +10,9 @@ def register_manage_scene_tools(mcp: FastMCP):
     def manage_scene(
         ctx: Context,
         action: str,
-        name: str,
-        path: str,
-        build_index: int,
+        name: str | None = None,
+        path: str | None = None,
+        build_index: int | None = None,
     ) -> Dict[str, Any]:
         """Manages Unity scenes (load, save, create, get hierarchy, etc.).
 
@@ -30,18 +31,30 @@ def register_manage_scene_tools(mcp: FastMCP):
                 "action": action,
                 "name": name,
                 "path": path,
-                "buildIndex": build_index
+                "buildIndex": build_index,
             }
             params = {k: v for k, v in params.items() if v is not None}
-            
+
             # Send command to Unity
             response = get_unity_connection().send_command("manage_scene", params)
 
             # Process response
             if response.get("success"):
-                return {"success": True, "message": response.get("message", "Scene operation successful."), "data": response.get("data")}
+                return {
+                    "success": True,
+                    "message": response.get("message", "Scene operation successful."),
+                    "data": response.get("data"),
+                }
             else:
-                return {"success": False, "message": response.get("error", "An unknown error occurred during scene management.")}
+                return {
+                    "success": False,
+                    "message": response.get(
+                        "error", "An unknown error occurred during scene management."
+                    ),
+                }
 
         except Exception as e:
-            return {"success": False, "message": f"Python error managing scene: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Python error managing scene: {str(e)}",
+            }

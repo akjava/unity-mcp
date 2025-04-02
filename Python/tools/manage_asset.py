@@ -33,18 +33,21 @@ def register_manage_asset_tools(mcp: FastMCP):
         """Performs asset operations (import, create, modify, delete, etc.) in Unity.
 
         Args:
-            ctx: The MCP context.
-            action: Operation to perform (e.g., 'import', 'create', 'modify', 'delete', 'duplicate', 'move', 'rename', 'search', 'get_info', 'create_folder', 'get_components').
-            path: Asset path (e.g., "Materials/MyMaterial.mat") or search scope.
-            asset_type: Asset type (e.g., 'Material', 'Folder') - required for 'create'.
-            properties: Dictionary of properties for 'create'/'modify'.
-            destination: Target path for 'duplicate'/'move'.
-            search_pattern: Search pattern (e.g., '*.prefab').
-            filter_*: Filters for search (type, date).
-            page_*: Pagination for search.
+            ctx: The MCP context (not directly used in the Unity command).
+            action (str): The operation to perform ('import', 'create', 'modify', 'delete', 'duplicate', 'move', 'rename', 'search', 'get_info', 'create_folder', 'get_components').  This determines the action taken on the asset or assets.
+            path (str): The path to the asset (e.g., "Assets/Materials/MyMaterial.mat"). For 'create' and 'create_folder', this is the path where the new asset/folder will be created. For 'search', this specifies the folder to search within (if any).  For other actions, it specifies the target asset.
+            asset_type (str | None): The type of asset to create (e.g., "Material", "ScriptableObject", "Folder").  Required only for the 'create' action.
+            properties (Dict[str, Any] | None): A dictionary of properties to apply to the asset during 'create' or 'modify'. The specific keys and values depend on the asset type. For materials, properties like "shader," "color," "texture," etc. can be set. For ScriptableObjects, properties map to public fields/properties.
+            destination (str | None): The destination path for 'duplicate' or 'move/rename' actions. If omitted for 'duplicate', a unique path will be generated.
+            generate_preview (bool | None):  If True, generates a preview image (base64 encoded PNG) for the asset when getting asset info ('get_info' and 'search').
+            search_pattern (str | None): The search pattern for the 'search' action (e.g., "*.prefab" to find all prefabs).
+            filter_type (str | None): Filters search results by asset type (e.g., "t:Material" to find only materials). Used with the 'search' action.
+            filter_date_after (str | None): Filters search results to include only assets modified after the specified date and time (ISO 8601 format, e.g., "2024-10-26T12:00:00Z"). Used with the 'search' action.
+            page_size (int | None): The number of results per page for the 'search' action. If omitted, a default page size is used (usually 50).
+            page_number (int | None):  The page number to retrieve for the 'search' action (1-based indexing). If omitted, the first page is returned.
 
         Returns:
-            A dictionary with operation results ('success', 'data', 'error').
+            Dict[str, Any]: A dictionary containing the results from Unity.  The dictionary will typically have a "success" key (boolean) indicating whether the operation was successful.  If successful, there might be a "data" key with the results (e.g., the created asset's data, the list of found assets).  If unsuccessful, there will be an "error" key with the error message.
         """
         # Ensure properties is a dict if None
         if properties is None:

@@ -40,32 +40,54 @@ def register_manage_gameobject_tools(mcp: FastMCP):
         # -- Component Management Arguments --
         component_name: str | None = None,
     ) -> Dict[str, Any]:
-        """Manages GameObjects: create, modify, delete, find, and component operations.
+        """Manages GameObjects in the Unity scene: create, modify, delete, find, and component operations.
 
         Args:
-            action: Operation (e.g., 'create', 'modify', 'find', 'add_component', 'remove_component', 'set_component_property').
-            target: GameObject identifier (name or path string) for modify/delete/component actions.
-            search_method: How to find objects ('by_name', 'by_id', 'by_path', etc.). Used with 'find' and some 'target' lookups.
-            name: GameObject name - used for both 'create' (initial name) and 'modify' (rename).
-            tag: Tag name - used for both 'create' (initial tag) and 'modify' (change tag).
-            parent: Parent GameObject reference - used for both 'create' (initial parent) and 'modify' (change parent).
-            layer: Layer name - used for both 'create' (initial layer) and 'modify' (change layer).
-            component_properties: Dict mapping Component names to their properties to set.
-                                  Example: {"Rigidbody": {"mass": 10.0, "useGravity": True}},
-                                  To set references:
-                                  - Use asset path string for Prefabs/Materials, e.g., {"MeshRenderer": {"material": "Assets/Materials/MyMat.mat"}}
-                                  - Use a dict for scene objects/components, e.g.:
-                                    {"MyScript": {"otherObject": {"find": "Player", "method": "by_name"}}} (assigns GameObject)
-                                    {"MyScript": {"playerHealth": {"find": "Player", "component": "HealthComponent"}}} (assigns Component)
-                                  Example set nested property:
-                                  - Access shared material: {"MeshRenderer": {"sharedMaterial.color": [1, 0, 0, 1]}}
-            components_to_add: List of component names to add.
-            Action-specific arguments (e.g., position, rotation, scale for create/modify;
-                     component_name for component actions;
-                     search_term, find_all for 'find').
+            action (str): The operation to perform ('create', 'modify', 'delete', 'find', 'get_components', 'add_component', 'remove_component', 'set_component_property').
+            target (str | int | None):  The GameObject to operate on.  Can be:
+                                        - A name (string).
+                                        - A path (string).
+                                        - An instance ID (integer).
+                                        Used for 'modify', 'delete', 'get_components', 'add_component', 'remove_component', 'set_component_property'.
+            search_method (str | None): How to search for the 'target' GameObject ('by_name', 'by_path', 'by_id', 'by_tag', 'by_layer', 'by_component').
+                                         If the 'target' is provided as an instance ID (int), the search method is typically 'by_id'. If not specified, the search method is determined automatically based on the 'target' type.
+            name (str | None): The name of the GameObject (for 'create' and 'modify' - rename). Required for 'create' unless instantiating a prefab.
+            tag (str | None): The tag to apply to the GameObject (for 'create' and 'modify').
+            parent (str | None): The parent GameObject (name, path or ID) to set (for 'create' and 'modify').
+            position (List[float] | None):  The local position of the GameObject as a list [x, y, z].
+            rotation (List[float] | None): The local rotation (Euler angles) of the GameObject as a list [x, y, z].
+            scale (List[float] | None): The local scale of the GameObject as a list [x, y, z].
+            components_to_add (List[str | Dict] | None):  A list of components to add. Can be a simple list of component type names (strings) OR
+                                                          a list of dictionaries, where each dictionary has a "typeName" key and an optional "properties" dictionary for initial property values:
+                                                          [{"typeName": "Rigidbody", "properties": {"mass": 5.0}}].
+            primitive_type (str | None): The type of primitive to create (e.g., "Cube", "Sphere", "Plane") when 'action' is 'create'.
+            save_as_prefab (bool | None): If True and 'action' is 'create', the new GameObject will be saved as a prefab.  Requires 'prefab_path' or 'name' (to construct a path) to be set.
+            prefab_path (str | None): The path to save the prefab (must end in '.prefab'). Used with 'create' and 'save_as_prefab'. If omitted, a default path is constructed using 'prefab_folder' and the GameObject's 'name'.
+            prefab_folder (str): The default folder for saving prefabs if 'prefab_path' is not provided (defaults to "Assets/Prefabs").
+            set_active (bool | None): Sets the GameObject's active state in the hierarchy (for 'modify').
+            layer (str | None): The name of the layer to assign the GameObject to (for 'create' and 'modify').
+            components_to_remove (List[str] | None): A list of component names (strings) to remove from the GameObject.
+            component_properties (Dict[str, Dict[str, Any]] | None): A dictionary to set component properties.  The keys are component type names, and the values are dictionaries of property names and their values.
+                                                                      Example: `{"Rigidbody": {"mass": 10.0, "useGravity": True}, "MeshRenderer": {"sharedMaterial.color": [1, 0, 0, 1]}}`.
+                                                                      You can use dot notation for nested properties (e.g., "sharedMaterial.color") and array indexers (e.g., "materials[0].color") to access materials.
+                                                                      To assign a Material asset, provide the asset path (string).  To assign a GameObject or component, use the "find" syntax:
+                                                                      {"MyScript": {"targetObject": {"find": "OtherObject", "method": "by_name"}}} (finds a GameObject) or
+                                                                      {"MyScript": {"healthComponent": {"find": "Player", "method": "by_id", "component": "Health"}}} (finds a component of type "Health").
+
+            search_term (str | None): The term to search for when 'action' is 'find'.  The meaning of the search term depends on the 'search_method' (name, tag, etc.).
+            find_all (bool): If True, return all matching GameObjects when using 'find'.  If False (default), return only the first match.
+            search_in_children (bool): If True, the search will be limited to the children of the 'target' GameObject (when 'action' is 'find').
+            search_inactive (bool): If True, include inactive GameObjects in searches (for 'find' and when resolving the 'target' object).
+            component_name (str | None): The name of the component to add, remove, or set properties on. Used with 'add_component', 'remove_component', and 'set_component_property' actions.
 
         Returns:
-            Dictionary with operation results ('success', 'message', 'data').
+            Dict[str, Any]: A dictionary containing the results of the operation:
+                            - `success` (bool): True if the operation was successful, False otherwise.
+                            - `message` (str): A message describing the result (success message or error message).
+                            - `data` (Any):  Data returned by the operation (e.g., the created GameObject's data, a list of found GameObjects, etc.).  May be None.
+
+        Raises:
+            Exception: If there is a communication error with Unity or an unexpected error during processing.
         """
         try:
             # --- Early check for attempting to modify a prefab asset ---
